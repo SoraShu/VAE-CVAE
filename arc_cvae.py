@@ -118,23 +118,27 @@ def train_one_epoch(model, loader, optimizer, device, kld_weight):
 def evaluate(model, loader, device):
     model.eval()
     total_acc = 0
+    total_asis_acc = 0
     total_exact_match = 0
     
     with torch.no_grad():
         for condition, target in loader:
             condition, target = condition.to(device), target.to(device)
             
-            # CVAE Inference: Predict using ONLY condition
-            preds = model.predict(condition) 
+
+            preds = model.predict(condition)
             
             target_sq = target.squeeze(1)
             acc = (preds == target_sq).float().mean()
+            # as-is acc: compare input and target
+            asis_acc = (condition[:, -1, :, :] == target_sq).float().mean()
             total_acc += acc.item()
+            total_asis_acc += asis_acc.item()
             
             matches = (preds == target_sq).view(preds.size(0), -1).all(dim=1).float().mean()
             total_exact_match += matches.item()
             
-    return total_acc / len(loader), total_exact_match / len(loader)
+    return total_acc / len(loader), total_exact_match / len(loader), total_asis_acc / len(loader)
 
 def visualize_results(model, loader, device, epoch):
     model.eval()
@@ -203,7 +207,7 @@ def main():
         kld_weight = min(0.01, (epoch / 20) * 0.01)
         
         avg_loss, avg_acc = train_one_epoch(model, train_loader, optimizer, device, kld_weight)
-        val_acc, val_exact = evaluate(model, val_loader, device)
+        val_acc, val_exact,_ = evaluate(model, val_loader, device)
         
         print(f"Epoch {epoch+1} | Loss: {avg_loss:.4f} | Train Acc: {avg_acc:.4f} | Val Acc: {val_acc:.4f} | Val Exact: {val_exact:.4f}")
         
@@ -217,8 +221,8 @@ def main():
         
         # load best model for final evaluation
         model.load_state_dict(torch.load("results_arc_cvae/best_cvae.pth"))
-        val_acc, val_exact = evaluate(model, val_loader, device)
-        print(f"Best Model | Val Acc: {val_acc:.4f} | Val Exact: {val_exact:.4f}")
+        val_acc, val_exact, val_asis = evaluate(model, val_loader, device)
+        print(f"Best Model | Val Acc: {val_acc:.4f} | Val Exact: {val_exact:.4f} | Val As-Is: {val_asis:.4f}")
         visualize_results(model, val_loader, device, "best")
 
 if __name__ == "__main__":

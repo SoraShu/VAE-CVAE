@@ -114,6 +114,7 @@ def train_one_epoch(model, loader, optimizer, device, kld_weight):
 def evaluate(model, loader, device):
     model.eval()
     total_acc = 0
+    total_asis_acc = 0
     total_full_grid_acc = 0 
     
     with torch.no_grad():
@@ -122,12 +123,15 @@ def evaluate(model, loader, device):
             preds = model.predict(inputs) 
             
             acc = (preds == targets).float().mean()
+            # as-is acc: compare input and target
+            asis_acc = (inputs[:, -1, :, :] == targets).float().mean()
             total_acc += acc.item()
+            total_asis_acc += asis_acc.item()
             
             matches = (preds == targets).view(preds.size(0), -1).all(dim=1).float().mean()
             total_full_grid_acc += matches.item()
             
-    return total_acc / len(loader), total_full_grid_acc / len(loader)
+    return total_acc / len(loader), total_full_grid_acc / len(loader), total_asis_acc / len(loader)
 
 def visualize_results(model, loader, device, epoch):
     model.eval()
@@ -201,7 +205,7 @@ def main():
         kld_weight = min(0.01, (epoch / 20) * 0.01)
         
         avg_loss, avg_acc = train_one_epoch(model, train_loader, optimizer, device, kld_weight)
-        val_acc, val_exact_match = evaluate(model, val_loader, device)
+        val_acc, val_exact_match, _ = evaluate(model, val_loader, device)
         
         print(f"Epoch {epoch+1} | Loss: {avg_loss:.4f} | Train Acc: {avg_acc:.4f} | Val Acc: {val_acc:.4f} | Val Exact: {val_exact_match:.4f}")
         
@@ -214,8 +218,8 @@ def main():
     
     # load best model for final evaluation
     model.load_state_dict(torch.load("results_arc/arc_vae_best.pth"))
-    val_acc, val_exact_match = evaluate(model, val_loader, device)
-    print(f"Final Evaluation on Validation Set | Val Acc: {val_acc:.4f} | Val Exact: {val_exact_match:.4f}")
+    val_acc, val_exact_match, val_asis_acc = evaluate(model, val_loader, device)
+    print(f"Final Evaluation on Validation Set | Val Acc: {val_acc:.4f} | Val Exact: {val_exact_match:.4f} | Val As-Is: {val_asis_acc:.4f}")
     visualize_results(model, val_loader, device, 'final')
 
 if __name__ == "__main__":

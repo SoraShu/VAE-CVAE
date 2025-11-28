@@ -195,9 +195,11 @@ HIDDEN_DIMS = [128, 256, 512]
 KLD_WEIGHT = min(0.01, (epoch / 20) * 0.01)
 
 # The similarity metrics on the evaluation set
-VAL_ACC_RATE:  0.7242
+VAL_ACC_RATE:  0.7249
 # The exact match rate on the evaluation set
 VAL_EXACT_MATCH_RATE:  0.0000
+# The as-is accuracy on the evaluation set
+VAL_AS_IS_ACC_RATE:  0.8563
 ```
 #figure(
   image("./img/arcvae.png"),
@@ -236,9 +238,11 @@ HIDDEN_DIMS = [128, 256, 512]
 KLD_WEIGHT = min(0.01, (epoch / 20) * 0.01)
 
 # The similarity metrics on the evaluation set
-VAL_ACC_RATE:  0.7444
+VAL_ACC_RATE:  0.7349
 # The exact match rate on the evaluation set
 VAL_EXACT_MATCH_RATE:  0.0000
+# The as-is accuracy on the evaluation set
+VAL_AS_IS_ACC_RATE:  0.8563
 ```
 
 #figure(
@@ -248,15 +252,19 @@ VAL_EXACT_MATCH_RATE:  0.0000
 
 = Summary
 
-Above experiments show that both VAE and CVAE can be trained on the ARC-AGI-2 dataset, and achieve reasonable performance in similarity metrics. However, both models still struggle to achieve exact matches on the evaluation set, indicating the complexity of the ARC tasks.
+Above experiments show that both VAE and CVAE can be trained on the ARC-AGI-2 dataset, and seems to achieve reasonable performance in similarity metrics. 
 
-CVAE seems to perform slightly better than VAE in terms of similarity metrics, likely due to its ability to leverage the condition information from the training examples. But we doubt that because the condition encoder is not poIrful enough to capture the complex relationships in the ARC tasks.
+However, both models still struggle to achieve exact matches on the evaluation set, indicating the complexity of the ARC tasks.
+
+#text(fill: red)[Update:] If we compare the similarity metrics with a just "as-is" prediction (using the input grid as the output), both VAE and CVAE's metrics is worse than "as-is" prediction.
 
 = Reflections
 
 In the beginning, we wanted to implement a general-use VAE/CVAE model that can test on different datasets, including MNIST and ARC-AGI-2. But due to the significantly different nature of these datasets, and the complexity of ARC tasks, we had to make specific adjustments to the models and training procedures for ARC-AGI-2. But we still wander if there is a better way to design a more general model that can handle both simple and complex datasets effectively.
 
 In the analysis of ARC-AGI-2 dataset, we know that it is a very challenging dataset for generative models like VAE/CVAE. So we considering a very bad performance on ARC-AGI-2 dataset is expected. But in the end, if we considering the similarity metrics, both VAE and CVAE achieve reasonable performance.
+
+#text(fill: red)[Update:] After adding the "as-is" accuracy metric, we found that both VAE and CVAE's performance is worse than just using the input grid as the output. This indicates that our models are not effectively learning the transformations required by the ARC tasks, and further improvements are needed.
 
 = References
 
