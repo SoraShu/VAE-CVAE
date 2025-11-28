@@ -21,3 +21,6 @@ results_*/
 
 # bakfiles
 *.bak
+
+# pdf
+*.pdf
